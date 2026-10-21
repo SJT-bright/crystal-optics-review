@@ -1,0 +1,12 @@
+{
+  "name": "crystal-optics-review",
+  "version": "1.0.0",
+  "description": "晶体光学复习台：司钧霆制作与资料汇总的在线 H5 学习工具",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"build": "node scripts/build.mjs", "start": "node server.mjs", "test": "node --test test/*.test.mjs"},
+  "repository": {"type": "git", "url": "https://github.com/SJT-bright/crystal-optics-review.git"},
+  "author": "司钧霆",
+  "license": "MIT"
+}
