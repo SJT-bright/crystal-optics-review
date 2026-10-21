@@ -4,7 +4,7 @@
   var REPO = 'SJT-bright/crystal-optics-review';
   var button = document.getElementById('release-button');
   var current = {version:document.documentElement.dataset.version, build:document.documentElement.dataset.build};
-  var latest = null, checking = null, lastCheck = 0, checkTimer, statusTimer;
+  var latest = null, checking = null, manualRequested = false, lastCheck = 0, checkTimer, statusTimer;
   function say(message) {
     var status = document.getElementById('online-status');
     if (status) { status.textContent = message; status.hidden = false; clearTimeout(statusTimer); statusTimer = setTimeout(function () { status.hidden = true; }, 8000); }
@@ -26,6 +26,8 @@
     if (!document.hidden) checkTimer = setTimeout(function () { checkRelease(false); }, 300000);
   }
   function checkRelease(manual) {
+    // A foreground check may already be pending when the user clicks the button.
+    if (manual) manualRequested = true;
     if (checking) return checking;
     if (!manual && Date.now() - lastCheck < 30000) { schedule(); return Promise.resolve(null); }
     lastCheck = Date.now();
@@ -35,12 +37,12 @@
       .then(function (release) {
         if (!validRelease(release)) throw new Error('版本信息无效');
         latest = release; renderRelease();
-        if (manual) say(latest.build === current.build ? '当前已是最新版本 v' + current.version : '新版已发布。点击右上角更新按钮查看；本次学习不会自动中断。');
+        if (manualRequested) say(latest.build === current.build ? '当前已是最新版本 v' + current.version : '新版已发布。点击右上角更新按钮查看；本次学习不会自动中断。');
         return release;
       }).catch(function () {
-        if (manual) say('暂时无法检查更新，请检查网络后重试。当前版本仍可继续使用。');
+        if (manualRequested) say('暂时无法检查更新，请检查网络后重试。当前版本仍可继续使用。');
         return null;
-      }).finally(function () { clearTimeout(timer); checking = null; schedule(); });
+      }).finally(function () { clearTimeout(timer); checking = null; manualRequested = false; schedule(); });
     return checking;
   }
   function confirmUpdate() {

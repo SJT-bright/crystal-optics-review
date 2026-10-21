@@ -1,6 +1,6 @@
 {
   "name": "crystal-optics-review",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "晶体光学复习台：司钧霆制作与资料汇总的在线 H5 学习工具",
   "private": true,
   "type": "module",
