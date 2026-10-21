@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-version="1.0.0" data-build="45befdc793c0ee06">
+<html lang="zh-CN" data-version="1.0.0" data-build="8216f7dbcb0de18b">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -2115,7 +2115,7 @@ function vmSourceDetails(s){
   if(!s.sourceDescriptionHtml)return '';
   var html='<details class="source-info"><summary>完整标本资料 · 原站说明与图注'+((s.sourceVideos||[]).length?' · 讲解视频 '+s.sourceVideos.length:'')+'</summary><div class="source-info-body">'+scrubSourceBasicHtml(s.sourceBasicHtml)+s.sourceDescriptionHtml;
   (s.sourceVideos||[]).forEach(function(v){html+='<figure class="source-lecture"><figcaption>'+esc(v.title)+'</figcaption><video controls playsinline preload="none" src="'+attr(v.localPath)+'" poster="'+attr(v.posterLocalPath)+'" aria-label="'+attr(v.title)+'"></video></figure>'});
-  return html+'<div class="hint">原站资料逐段保留；空白信息保持空白。照片和讲解视频随包可用，原站方法与分类链接需要联网。</div></div></details>';
+  return html+'<div class="hint">原站资料逐段保留；空白信息保持空白。照片和讲解视频按当前选择在线加载，原站方法与分类链接可在线查看。</div></div></details>';
 }
 function bindSourceDetails(root){
   root.querySelectorAll('.source-info').forEach(function(panel){

@@ -121,6 +121,7 @@
     if (!canvas || !canvas.width || Number(canvas.style.opacity) !== 1) { say('当前画面尚未加载完成，请稍后再下载。'); return; }
     try {
       var label = typeof VM !== 'undefined' && typeof M !== 'undefined' && M[VM.sid] ? M[VM.sid].name : '显微镜';
+      if (typeof cleanName === 'function') label = cleanName(label);
       label += '_' + (canvas.dataset.degree || '0') + '度';
       canvas.toBlob(function (blob) { try { saveBlob(blob, filename(label,'.png')); say('已下载当前显微镜画面。'); } catch (_) { say('画面下载失败，请稍后重试。'); } }, 'image/png');
     } catch (_) { say('画面暂时无法下载，请等待图片加载完成后重试。'); }
