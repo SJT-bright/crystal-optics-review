@@ -5,10 +5,13 @@ import {readFile,stat,realpath} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import {Readable} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
+import {createMediaSeeder} from './media-seed.mjs';
 const ROOT=path.dirname(fileURLToPath(import.meta.url)), PUBLIC=path.join(ROOT,'public');
 const TYPES={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.gif':'image/gif','.mp4':'video/mp4','.pdf':'application/pdf','.webp':'image/webp','.txt':'text/plain; charset=utf-8'};
 const media=JSON.parse(await readFile(path.join(ROOT,'media-manifest.json'),'utf8'));
 const site=JSON.parse(await readFile(path.join(ROOT,'site.json'),'utf8'));
+const seedFile=path.join(ROOT,'seed-config.private.json');
+let seedConfig=null;try{seedConfig=JSON.parse(await readFile(seedFile,'utf8'));if(!/^[a-f0-9]{64}$/.test(seedConfig.token))throw new Error('Invalid seed configuration');}catch(error){if(error.code!=='ENOENT')throw error;}
 const entryFiles=new Set(['index.html','data.js','data_patch.js','vm_complete.js','enrichment_data.js','enrichment.js','conoscopy_data.js','conoscopy.js','struct3d.js','online.js','online.css','sw.js','icon.svg','icon-180.png','制作与资料汇总.txt','version.json']);
 export function byteRange(header,size){
   if(!header)return null;
@@ -21,11 +24,11 @@ export function byteRange(header,size){
   return {start,end};
 }
 export function createApp({fetchImpl=fetch,headerTimeoutMs=30000}={}){
+  const seed=createMediaSeeder({root:PUBLIC,manifest:media,token:seedConfig?.token||'',configFile:seedConfig?seedFile:null});
   return http.createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
     res.setHeader('Cache-Control','no-store, max-age=0');
-    if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405,{'Allow':'GET, HEAD'});res.end();return;}
     let key;
     try{
       const raw=req.url.split('?')[0];
@@ -33,6 +36,8 @@ export function createApp({fetchImpl=fetch,headerTimeoutMs=30000}={}){
       key=decodeURIComponent(raw).replace(/^\//,'')||'index.html';
       if(key.split('/').some(part=>part==='..'||part.startsWith('.'))||key.includes('\\')||key.includes('\0'))throw new Error('path');
     }catch(_){res.writeHead(400);res.end('Invalid path');return;}
+    try{if(await seed(req,res,key))return;}catch(_){if(!res.headersSent){res.writeHead(503);res.end('Media transfer unavailable');}else res.destroy();return;}
+    if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405,{'Allow':'GET, HEAD'});res.end();return;}
     if(!entryFiles.has(key)&&!Object.hasOwn(media,key)){res.writeHead(404);res.end('Not found');return;}
     try{
       const file=path.join(PUBLIC,key);

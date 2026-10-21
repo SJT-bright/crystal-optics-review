@@ -16,7 +16,7 @@
   function renderRelease() {
     if (!button) return;
     var changed = latest && latest.build !== current.build;
-    button.textContent = changed ? '有新版 · 更新' : 'v' + current.version;
+    button.textContent = changed ? '有新版 · 更新' : 'v' + current.version + '·' + current.build.slice(0,4);
     button.classList.toggle('release-new', !!changed);
     button.title = '当前版本 v' + current.version + ' · ' + current.build + (changed ? '；可更新至 v' + latest.version : '；点击检查更新');
     button.setAttribute('aria-label', button.title);
