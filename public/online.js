@@ -103,7 +103,7 @@
   async function downloadImage(source, label, control) {
     if (control && control.disabled) return;
     if (control) control.disabled = true;
-    var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 30000);
+    var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 120000);
     try {
       var url = new URL(source, location.href);
       if (!/^https?:$/.test(url.protocol) && url.protocol !== 'data:') throw new Error('不支持此图片地址');

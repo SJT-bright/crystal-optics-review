@@ -20,7 +20,7 @@ export function byteRange(header,size){
   if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||start>end||start>=size||(!left&&Number(right)<=0))throw new Error('range');
   return {start,end};
 }
-export function createApp(){
+export function createApp({fetchImpl=fetch,headerTimeoutMs=30000}={}){
   return http.createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
@@ -43,13 +43,16 @@ export function createApp(){
         // The production deployment holds the assets locally. No arbitrary URL proxy.
         const origin=new URL(site.mediaOrigin);
         if(origin.protocol!=='https:')throw new Error('Invalid media origin');
+        try{byteRange(req.headers.range,media[key].bytes);}catch(_){res.writeHead(416,{'Content-Range':'bytes */'+media[key].bytes,'Content-Length':'0'});res.end();return;}
         const url=new URL(key,origin.href.endsWith('/')?origin.href:origin.href+'/');
         const controller=new AbortController();
-        const timer=setTimeout(()=>controller.abort(),30000);
+        const timer=setTimeout(()=>controller.abort(),headerTimeoutMs);
         res.on('close',()=>controller.abort());
         try{
           const headers={};if(req.headers.range)headers.Range=req.headers.range;
-          const response=await fetch(url,{method:req.method,headers,redirect:'error',signal:controller.signal});
+          const response=await fetchImpl(url,{method:req.method,headers,redirect:'error',signal:controller.signal});
+          // Only time out waiting for headers. A slow viewer may stream a video for minutes.
+          clearTimeout(timer);
           res.statusCode=response.status;
           for(const name of ['content-type','content-length','content-range','accept-ranges']){const value=response.headers.get(name);if(value)res.setHeader(name,value);}
           if(req.method==='HEAD'||!response.body)res.end();else await pipeline(Readable.fromWeb(response.body),res);
@@ -69,7 +72,11 @@ export function createApp(){
     }catch(_){if(!res.headersSent){res.writeHead(502);res.end('Media temporarily unavailable');}else res.destroy();}
   });
 }
-if(process.argv[1]===fileURLToPath(import.meta.url)){
-  const port=Number(process.env.PORT||9175);
-  createApp().listen(port,'0.0.0.0',()=>console.log('Crystal optics online H5 listening on '+port));
+// Resolve symlinked launch paths used by some hosting sandboxes.
+const entry=process.argv[1]?await realpath(process.argv[1]).catch(()=>path.resolve(process.argv[1])):null;
+if(entry===await realpath(fileURLToPath(import.meta.url))){
+  const port=Number(process.env.PORT||3000);
+  if(!Number.isSafeInteger(port)||port<1||port>65535)throw new Error('Invalid PORT');
+  console.error('Starting Crystal Optics online H5 on port '+port);
+  createApp().listen(port,'0.0.0.0',()=>console.error('Crystal Optics online H5 listening on '+port));
 }
